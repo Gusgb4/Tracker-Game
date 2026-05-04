@@ -16,4 +16,11 @@ async function create(riot_name, riot_tag, puuid) {
   return result.insertId;
 }
 
-module.exports = { findByRiotId, create };  
+async function update(id, rank) {
+  await pool.query(
+    'UPDATE jogadores SET rank = ?, atualizado_em = NOW() WHERE id = ?',
+    [rank, id]
+  );
+}
+
+module.exports = { findByRiotId, create, update };  

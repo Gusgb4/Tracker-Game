@@ -49,14 +49,12 @@ Depois volta no XAMPP e clica em **Stop** no MySQL.
 ### Autenticação
 
 | Método | Rota | Descrição |
-|---|---|---|
 | POST | `/api/auth/register` | Cadastro de usuário |
 | POST | `/api/auth/login` | Login e geração de token JWT |
 
 ### Jogador
 
 | Método | Rota | Descrição |
-|---|---|---|
 | GET | `/api/player/:region/:name/:tag` | Busca dados do jogador na Henrik API |
 
 ###
