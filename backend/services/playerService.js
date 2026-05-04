@@ -57,6 +57,14 @@ async function getPlayerData(region, name, tag, forceUpdate = false) {
   if (allMatches.data && allMatches.data.length > 0) {
     for (const match of allMatches.data) {
       const jogadorDaPartida = match.players?.all_players?.find(p => p.puuid === puuid);
+      const rounds_played = match.metadata?.rounds_played || 1;
+      const headshots = jogadorDaPartida?.stats?.headshots || 0;
+      const bodyshots = jogadorDaPartida?.stats?.bodyshots || 0;
+      const legshots = jogadorDaPartida?.stats?.legshots || 0;
+      const totalShots = headshots + bodyshots + legshots;
+      const damage_made = jogadorDaPartida?.damage_made || 0;
+      const score = jogadorDaPartida?.stats?.score || 0;
+
       await partidaRepository.upsert({
         jogador_id: jogador.id,
         match_id: match.metadata.matchid,
@@ -70,7 +78,10 @@ async function getPlayerData(region, name, tag, forceUpdate = false) {
           ? (jogadorDaPartida.stats.kills / jogadorDaPartida.stats.deaths).toFixed(2)
           : jogadorDaPartida?.stats?.kills || 0,
         resultado: match.teams?.red?.has_won === true ? 'Vitória' : 'Derrota',
-        data_partida: new Date(match.metadata.game_start * 1000)
+        data_partida: new Date(match.metadata.game_start * 1000),
+        headshot_percent: totalShots > 0 ? ((headshots / totalShots) * 100).toFixed(2) : 0,
+        acs: (score / rounds_played).toFixed(2),
+        dano_por_round: (damage_made / rounds_played).toFixed(2)
       });
     }
   }
@@ -80,8 +91,14 @@ async function getPlayerData(region, name, tag, forceUpdate = false) {
 
   return {
     fonte: 'api',
-    account: account.data,
-    mmr: mmr.data,
+    jogador: {
+      id: jogador.id,
+      riot_name: name,
+      riot_tag: tag,
+      puuid: puuid,
+      rank: mmr.data?.current_data?.currenttierpatched || null,
+      atualizado_em: new Date()
+    },
     partidas: ultimas5,
     stats: calcularEstatisticas(todasPartidas)
   };
@@ -101,6 +118,9 @@ function calcularEstatisticas(partidas) {
   const kills = partidas.reduce((acc, p) => acc + (p.kills || 0), 0);
   const deaths = partidas.reduce((acc, p) => acc + (p.deaths || 0), 0);
   const assists = partidas.reduce((acc, p) => acc + (p.assists || 0), 0);
+  const acs = partidas.reduce((acc, p) => acc + parseFloat(p.acs || 0), 0);
+  const dano = partidas.reduce((acc, p) => acc + parseFloat(p.dano_por_round || 0), 0);
+  const hs = partidas.reduce((acc, p) => acc + parseFloat(p.headshot_percent || 0), 0);
 
   return {
     total_partidas: total,
@@ -110,7 +130,10 @@ function calcularEstatisticas(partidas) {
     kdr_geral: deaths > 0 ? (kills / deaths).toFixed(2) : kills,
     kills_totais: kills,
     deaths_totais: deaths,
-    assists_totais: assists
+    assists_totais: assists,
+    acs_medio: (acs / total).toFixed(2),
+    dano_por_round_medio: (dano / total).toFixed(2),
+    headshot_percent_medio: (hs / total).toFixed(2) + '%'
   };
 }
 
