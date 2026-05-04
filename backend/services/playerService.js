@@ -8,20 +8,25 @@ const headers = { 'Authorization': API_KEY };
 
 async function getPlayerData(region, name, tag, forceUpdate = false) {
 
-  
   let jogador = await jogadorRepository.findByRiotId(name, tag);
-
   const precisaAtualizar = !jogador || forceUpdate || dadosExpirados(jogador.atualizado_em);
 
   if (!precisaAtualizar) {
     const partidas = await partidaRepository.findByJogadorId(jogador.id);
-    return { fonte: 'banco', jogador, partidas, stats: calcularEstatisticas(partidas) };
+    const ultimas5 = partidas.slice(0, 5);
+    return {
+      fonte: 'banco',
+      jogador,
+      partidas: ultimas5,
+      stats: calcularEstatisticas(partidas)
+    };
   }
 
-  const [accountRes, mmrRes, matchesRes] = await Promise.all([
+  const [accountRes, mmrRes, matchesRes, allMatchesRes] = await Promise.all([
     fetch(`${BASE_URL}/v1/account/${name}/${tag}`, { headers }),
     fetch(`${BASE_URL}/v2/mmr/${region}/${name}/${tag}`, { headers }),
-    fetch(`${BASE_URL}/v3/matches/${region}/${name}/${tag}?size=5&mode=competitive`, { headers })
+    fetch(`${BASE_URL}/v3/matches/${region}/${name}/${tag}?size=5&mode=competitive`, { headers }),
+    fetch(`${BASE_URL}/v3/matches/${region}/${name}/${tag}?size=50&mode=competitive`, { headers })
   ]);
 
   if (accountRes.status === 404) {
@@ -39,17 +44,9 @@ async function getPlayerData(region, name, tag, forceUpdate = false) {
   const account = await accountRes.json();
   const mmr = await mmrRes.json();
   const matches = await matchesRes.json();
-
+  const allMatches = allMatchesRes.ok ? await allMatchesRes.json() : { data: [] };
   const puuid = account.data.puuid;
 
-  // busca estatísticas gerais da season pelo puuid
-  const statsRes = await fetch(
-    `${BASE_URL}/v1/by-puuid/lifetime/matches/${region}/${puuid}?mode=competitive&size=20`,
-    { headers }
-  );
-  const stats = statsRes.ok ? await statsRes.json() : { data: [] };
-
-  // salva ou atualiza jogador no banco
   if (!jogador) {
     const id = await jogadorRepository.create(name, tag, puuid);
     jogador = { id, riot_name: name, riot_tag: tag, puuid };
@@ -57,9 +54,8 @@ async function getPlayerData(region, name, tag, forceUpdate = false) {
     await jogadorRepository.update(jogador.id, mmr.data?.current_data?.currenttierpatched);
   }
 
-  // salva partidas no banco sem duplicar
-  if (matches.data && matches.data.length > 0) {
-    for (const match of matches.data) {
+  if (allMatches.data && allMatches.data.length > 0) {
+    for (const match of allMatches.data) {
       const jogadorDaPartida = match.players?.all_players?.find(p => p.puuid === puuid);
       await partidaRepository.upsert({
         jogador_id: jogador.id,
@@ -79,22 +75,23 @@ async function getPlayerData(region, name, tag, forceUpdate = false) {
     }
   }
 
+  const todasPartidas = await partidaRepository.findByJogadorId(jogador.id);
+  const ultimas5 = todasPartidas.slice(0, 5);
+
   return {
     fonte: 'api',
     account: account.data,
     mmr: mmr.data,
-    matches: matches.data,
-    stats: calcularEstatisticas(stats.data)
+    partidas: ultimas5,
+    stats: calcularEstatisticas(todasPartidas)
   };
 }
-
 
 function dadosExpirados(atualizado_em) {
   if (!atualizado_em) return true;
   const diff = Date.now() - new Date(atualizado_em).getTime();
   return diff > 30 * 60 * 1000;
 }
-
 
 function calcularEstatisticas(partidas) {
   if (!partidas || partidas.length === 0) return null;
