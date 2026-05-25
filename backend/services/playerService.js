@@ -72,8 +72,16 @@ if (allMatches.data && allMatches.data.length > 0) {
       const { firstBloods, aces } = calcularFirstBloodsEAces(match, puuid);
       const timeDoJogador = jogadorDaPartida?.team?.toLowerCase();
       const redGanhou = match.teams?.red?.has_won === true;
-      const jogadorGanhou = (timeDoJogador === 'red' && redGanhou) ||
-                            (timeDoJogador === 'blue' && !redGanhou);
+      const blueGanhou = match.teams?.blue?.has_won === true;
+
+      let resultado;
+      if (!redGanhou && !blueGanhou) {
+        resultado = 'Empate';
+      } else {
+        const jogadorGanhou = (timeDoJogador === 'red' && redGanhou) ||
+                              (timeDoJogador === 'blue' && blueGanhou);
+        resultado = jogadorGanhou ? 'Vitória' : 'Derrota';
+      }
 
       await partidaRepository.upsert({
         jogador_id: jogador.id,
@@ -87,7 +95,7 @@ if (allMatches.data && allMatches.data.length > 0) {
         kdr: jogadorDaPartida?.stats?.deaths > 0
           ? (jogadorDaPartida.stats.kills / jogadorDaPartida.stats.deaths).toFixed(2)
           : jogadorDaPartida?.stats?.kills || 0,
-        resultado: jogadorGanhou ? 'Vitória' : 'Derrota',
+        resultado: resultado,
         data_partida: new Date(match.metadata.game_start * 1000),
         headshot_percent: totalShots > 0 ? ((headshots / totalShots) * 100).toFixed(2) : 0,
         acs: (score / rounds_played).toFixed(2),
@@ -127,6 +135,8 @@ function calcularEstatisticas(partidas) {
 
   const total = partidas.length;
   const vitorias = partidas.filter(p => p.resultado === 'Vitória').length;
+  const empates = partidas.filter(p => p.resultado === 'Empate').length;
+  const derrotas = partidas.filter(p => p.resultado === 'Derrota').length;
   const kills = partidas.reduce((acc, p) => acc + (p.kills || 0), 0);
   const deaths = partidas.reduce((acc, p) => acc + (p.deaths || 0), 0);
   const assists = partidas.reduce((acc, p) => acc + (p.assists || 0), 0);
@@ -139,7 +149,8 @@ function calcularEstatisticas(partidas) {
   return {
     total_partidas: total,
     vitorias,
-    derrotas: total - vitorias,
+    empates,
+    derrotas: total - vitorias - empates,
     winrate: ((vitorias / total) * 100).toFixed(1) + '%',
     kdr_geral: deaths > 0 ? (kills / deaths).toFixed(2) : kills,
     kills_totais: kills,
