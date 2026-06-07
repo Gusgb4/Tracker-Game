@@ -13,20 +13,19 @@ async function getPlayerData(region, name, tag, forceUpdate = false) {
 
   if (!precisaAtualizar) {
     const partidas = await partidaRepository.findByJogadorId(jogador.id);
-    const ultimas5 = partidas.slice(0, 5);
+    const ultimas50 = partidas.slice(0, 50);
     return {
       fonte: 'banco',
       jogador,
-      partidas: ultimas5,
+      partidas: ultimas50,
       stats: calcularEstatisticas(partidas)
     };
   }
 
-  const [accountRes, mmrRes, matchesRes, allMatchesRes] = await Promise.all([
+  const [accountRes, mmrRes, matchesRes] = await Promise.all([
     fetch(`${BASE_URL}/v1/account/${name}/${tag}`, { headers }),
     fetch(`${BASE_URL}/v2/mmr/${region}/${name}/${tag}`, { headers }),
-    fetch(`${BASE_URL}/v3/matches/${region}/${name}/${tag}?size=5&mode=competitive`, { headers }),
-    fetch(`${BASE_URL}/v3/matches/${region}/${name}/${tag}?size=50&mode=competitive`, { headers })
+    fetch(`${BASE_URL}/v3/matches/${region}/${name}/${tag}?size=10&mode=competitive`, { headers })
   ]);
 
   if (accountRes.status === 404) {
@@ -44,30 +43,31 @@ async function getPlayerData(region, name, tag, forceUpdate = false) {
   const account = await accountRes.json();
   const mmr = await mmrRes.json();
   const matches = await matchesRes.json();
-  const allMatches = allMatchesRes.ok ? await allMatchesRes.json() : { data: [] };
   const puuid = account.data.puuid;
+  const novasPartidas = matches.data || [];
 
-if (!jogador) {
-  // verifica se já existe pelo puuid antes de criar
-  const jogadorPorPuuid = await jogadorRepository.findByPuuid(puuid);
-  if (jogadorPorPuuid) {
-    jogador = jogadorPorPuuid;
-    await jogadorRepository.update(jogador.id, mmr.data?.current_data?.currenttierpatched);
+  console.log('Partidas buscadas da API:', novasPartidas.length);
+
+  if (!jogador) {
+    const jogadorPorPuuid = await jogadorRepository.findByPuuid(puuid);
+    if (jogadorPorPuuid) {
+      jogador = jogadorPorPuuid;
+      await jogadorRepository.update(jogador.id, mmr.data?.current_data?.currenttierpatched);
+    } else {
+      const id = await jogadorRepository.create(name, tag, puuid);
+      jogador = { id, riot_name: name, riot_tag: tag, puuid };
+    }
   } else {
-    const id = await jogadorRepository.create(name, tag, puuid);
-    jogador = { id, riot_name: name, riot_tag: tag, puuid };
+    await jogadorRepository.update(jogador.id, mmr.data?.current_data?.currenttierpatched);
+    await rankSnapshotRepository.save(
+      jogador.id,
+      mmr.data?.current_data?.currenttierpatched || null,
+      mmr.data?.current_data?.ranking_in_tier || null
+    );
   }
-} else {
-  await jogadorRepository.update(jogador.id, mmr.data?.current_data?.currenttierpatched);
-  await rankSnapshotRepository.save(
-    jogador.id,
-    mmr.data?.current_data?.currenttierpatched || null,
-    mmr.data?.current_data?.ranking_in_tier || null
-  );
-}
 
-if (allMatches.data && allMatches.data.length > 0) {
-    for (const match of allMatches.data) {
+  if (novasPartidas.length > 0) {
+    for (const match of novasPartidas) {
       const jogadorDaPartida = match.players?.all_players?.find(p => p.puuid === puuid);
       const rounds_played = match.metadata?.rounds_played || 1;
       const headshots = jogadorDaPartida?.stats?.headshots || 0;
@@ -114,7 +114,7 @@ if (allMatches.data && allMatches.data.length > 0) {
   }
 
   const todasPartidas = await partidaRepository.findByJogadorId(jogador.id);
-  const ultimas5 = todasPartidas.slice(0, 5);
+  const ultimas50 = todasPartidas.slice(0, 50);
 
   return {
     fonte: 'api',
@@ -126,7 +126,7 @@ if (allMatches.data && allMatches.data.length > 0) {
       rank: mmr.data?.current_data?.currenttierpatched || null,
       atualizado_em: new Date()
     },
-    partidas: ultimas5,
+    partidas: ultimas50,
     stats: calcularEstatisticas(todasPartidas)
   };
 }
@@ -143,7 +143,6 @@ function calcularEstatisticas(partidas) {
   const total = partidas.length;
   const vitorias = partidas.filter(p => p.resultado === 'Vitória').length;
   const empates = partidas.filter(p => p.resultado === 'Empate').length;
-  const derrotas = partidas.filter(p => p.resultado === 'Derrota').length;
   const kills = partidas.reduce((acc, p) => acc + (p.kills || 0), 0);
   const deaths = partidas.reduce((acc, p) => acc + (p.deaths || 0), 0);
   const assists = partidas.reduce((acc, p) => acc + (p.assists || 0), 0);
@@ -176,7 +175,6 @@ function calcularFirstBloodsEAces(match, puuid) {
   let firstBloods = 0;
   let aces = 0;
 
-  // Agrupa kills por round
   const killsPorRound = {};
   for (const kill of kills) {
     const round = kill.round;
@@ -187,13 +185,11 @@ function calcularFirstBloodsEAces(match, puuid) {
   for (const round in killsPorRound) {
     const killsDoRound = killsPorRound[round];
 
-    // First Blood — primeiro kill do round
     const primeiroKill = killsDoRound.reduce((min, k) =>
       k.kill_time_in_round < min.kill_time_in_round ? k : min
     );
     if (primeiroKill.killer_puuid === puuid) firstBloods++;
 
-    // Aces — 5 kills no mesmo round pelo mesmo jogador
     const killsDoJogador = killsDoRound.filter(k => k.killer_puuid === puuid);
     if (killsDoJogador.length >= 5) aces++;
   }
