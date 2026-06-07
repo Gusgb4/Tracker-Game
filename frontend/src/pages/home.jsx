@@ -21,7 +21,7 @@ export default function Home() {
           headers: { Authorization: `Bearer ${token}` }
         })
         
-        console.log("Minha lista de favoritos:", res.data) // <--- ADICIONE ESTA LINHA
+        console.log("Minha lista de favoritos:", res.data) // Test favoritos
         
         setFavoritos(res.data.data || [])
       } catch (err) {

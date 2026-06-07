@@ -48,11 +48,18 @@ async function getPlayerData(region, name, tag, forceUpdate = false) {
   const puuid = account.data.puuid;
 
 if (!jogador) {
-  const id = await jogadorRepository.create(name, tag, puuid);
-  jogador = { id, riot_name: name, riot_tag: tag, puuid };
+  // verifica se já existe pelo puuid antes de criar
+  const jogadorPorPuuid = await jogadorRepository.findByPuuid(puuid);
+  if (jogadorPorPuuid) {
+    jogador = jogadorPorPuuid;
+    await jogadorRepository.update(jogador.id, mmr.data?.current_data?.currenttierpatched);
+  } else {
+    const id = await jogadorRepository.create(name, tag, puuid);
+    jogador = { id, riot_name: name, riot_tag: tag, puuid };
+  }
 } else {
   await jogadorRepository.update(jogador.id, mmr.data?.current_data?.currenttierpatched);
-  await rankSnapshotRepository.save(  // ← adiciona isso
+  await rankSnapshotRepository.save(
     jogador.id,
     mmr.data?.current_data?.currenttierpatched || null,
     mmr.data?.current_data?.ranking_in_tier || null

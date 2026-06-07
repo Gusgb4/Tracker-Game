@@ -23,4 +23,12 @@ async function update(id, rank) {
   );
 }
 
-module.exports = { findByRiotId, create, update };  
+async function findByPuuid(puuid) {
+  const [rows] = await pool.query(
+    'SELECT * FROM jogadores WHERE puuid = ?',
+    [puuid]
+  );
+  return rows[0];
+}
+
+module.exports = { findByRiotId, create, update, findByPuuid };
