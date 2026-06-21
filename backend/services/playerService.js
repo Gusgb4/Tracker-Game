@@ -12,14 +12,20 @@ async function getPlayerData(region, name, tag, forceUpdate = false) {
   const precisaAtualizar = !jogador || forceUpdate || dadosExpirados(jogador.atualizado_em);
 
   if (!precisaAtualizar) {
-    const partidas = await partidaRepository.findByJogadorId(jogador.id);
-    const ultimas50 = partidas.slice(0, 50);
-    return {
-      fonte: 'banco',
-      jogador,
-      partidas: ultimas50,
-      stats: calcularEstatisticas(partidas)
-    };
+  const partidas = await partidaRepository.findByJogadorId(jogador.id);
+
+    if (partidas && partidas.length > 0) {
+      const ultimas50 = partidas.slice(0, 50);
+
+      return {
+        fonte: 'banco',
+        jogador,
+        partidas: ultimas50,
+        stats: calcularEstatisticas(ultimas50)
+      };
+  }
+
+    console.log('Jogador encontrado no banco, mas sem partidas. Buscando na API...');
   }
 
   const [accountRes, mmrRes, matchesRes] = await Promise.all([
@@ -46,6 +52,12 @@ async function getPlayerData(region, name, tag, forceUpdate = false) {
   const puuid = account.data.puuid;
   const novasPartidas = matches.data || [];
 
+  //LOG TEMPORARIO
+  console.log('Status matches:', matchesRes.status);
+  console.log('Partidas buscadas da API:', novasPartidas.length);
+  console.log('Primeira partida:', novasPartidas[0]?.metadata?.matchid);
+  console.log('Modo da primeira partida:', novasPartidas[0]?.metadata?.mode);
+
   console.log('Partidas buscadas da API:', novasPartidas.length);
 
   if (!jogador) {
@@ -67,8 +79,18 @@ async function getPlayerData(region, name, tag, forceUpdate = false) {
   }
 
   if (novasPartidas.length > 0) {
+    let partidasSalvas = 0;
+    let partidasIgnoradas = 0;
+
     for (const match of novasPartidas) {
       const jogadorDaPartida = match.players?.all_players?.find(p => p.puuid === puuid);
+
+      if (!jogadorDaPartida) {
+        partidasIgnoradas++;
+        console.log('Jogador não encontrado dentro da partida:', match.metadata?.matchid);
+        continue;
+      }
+
       const rounds_played = match.metadata?.rounds_played || 1;
       const headshots = jogadorDaPartida?.stats?.headshots || 0;
       const bodyshots = jogadorDaPartida?.stats?.bodyshots || 0;
@@ -85,8 +107,10 @@ async function getPlayerData(region, name, tag, forceUpdate = false) {
       if (!redGanhou && !blueGanhou) {
         resultado = 'Empate';
       } else {
-        const jogadorGanhou = (timeDoJogador === 'red' && redGanhou) ||
-                              (timeDoJogador === 'blue' && blueGanhou);
+        const jogadorGanhou =
+          (timeDoJogador === 'red' && redGanhou) ||
+          (timeDoJogador === 'blue' && blueGanhou);
+
         resultado = jogadorGanhou ? 'Vitória' : 'Derrota';
       }
 
@@ -95,25 +119,34 @@ async function getPlayerData(region, name, tag, forceUpdate = false) {
         match_id: match.metadata.matchid,
         mapa: match.metadata.map,
         modo: match.metadata.mode,
-        agente: jogadorDaPartida?.character || null,
-        kills: jogadorDaPartida?.stats?.kills || 0,
-        deaths: jogadorDaPartida?.stats?.deaths || 0,
-        assists: jogadorDaPartida?.stats?.assists || 0,
-        kdr: jogadorDaPartida?.stats?.deaths > 0
+        agente: jogadorDaPartida.character || null,
+        kills: jogadorDaPartida.stats?.kills || 0,
+        deaths: jogadorDaPartida.stats?.deaths || 0,
+        assists: jogadorDaPartida.stats?.assists || 0,
+        kdr: jogadorDaPartida.stats?.deaths > 0
           ? (jogadorDaPartida.stats.kills / jogadorDaPartida.stats.deaths).toFixed(2)
-          : jogadorDaPartida?.stats?.kills || 0,
-        resultado: resultado,
+          : jogadorDaPartida.stats?.kills || 0,
+        resultado,
         data_partida: new Date(match.metadata.game_start * 1000),
         headshot_percent: totalShots > 0 ? ((headshots / totalShots) * 100).toFixed(2) : 0,
         acs: (score / rounds_played).toFixed(2),
         dano_por_round: (damage_made / rounds_played).toFixed(2),
         first_bloods: firstBloods,
-        aces: aces
+        aces
       });
+
+      partidasSalvas++;
     }
+
+    console.log('Partidas salvas no banco:', partidasSalvas);
+    console.log('Partidas ignoradas:', partidasIgnoradas);
   }
 
   const todasPartidas = await partidaRepository.findByJogadorId(jogador.id);
+
+  console.log('ID do jogador:', jogador.id);
+  console.log('Partidas encontradas no banco depois do upsert:', todasPartidas.length);
+  
   const ultimas50 = todasPartidas.slice(0, 50);
 
   return {
@@ -127,7 +160,7 @@ async function getPlayerData(region, name, tag, forceUpdate = false) {
       atualizado_em: new Date()
     },
     partidas: ultimas50,
-    stats: calcularEstatisticas(todasPartidas)
+    stats: calcularEstatisticas(ultimas50)
   };
 }
 
@@ -137,8 +170,29 @@ function dadosExpirados(atualizado_em) {
   return diff > 30 * 60 * 1000;
 }
 
+function statusVazio() {
+  return {
+    total_partidas: 0,
+    vitorias: 0,
+    empates: 0,
+    derrotas: 0,
+    winrate: '0%',
+    kdr_geral: '0.00',
+    kills_totais: 0,
+    deaths_totais: 0,
+    assists_totais: 0,
+    acs_medio: '0.00',
+    dano_por_round_medio: '0.00',
+    headshot_percent_medio: '0.00%',
+    first_bloods_totais: 0,
+    aces_totais: 0
+  };
+}
+
 function calcularEstatisticas(partidas) {
-  if (!partidas || partidas.length === 0) return null;
+  if (!partidas || partidas.length === 0) {
+    return statusVazio();
+  }
 
   const total = partidas.length;
   const vitorias = partidas.filter(p => p.resultado === 'Vitória').length;
