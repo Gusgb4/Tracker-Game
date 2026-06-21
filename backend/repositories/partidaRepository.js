@@ -48,4 +48,8 @@ async function findByJogadorId(jogador_id) {
   return rows;
 }
 
-module.exports = { upsert, findByJogadorId };
+async function deleteByJogadorId(jogador_id) {
+  await pool.query('DELETE FROM partidas WHERE jogador_id = ?', [jogador_id]);
+}
+
+module.exports = { upsert, findByJogadorId, deleteByJogadorId };
