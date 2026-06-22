@@ -1,4 +1,4 @@
-import Tooltip from "./tooltip"
+import Tooltip from "./tooltip";
 
 function MatchCard({ partida, agentImages }) {
   const getResultadoStyle = (resultado) => {
@@ -10,7 +10,7 @@ function MatchCard({ partida, agentImages }) {
         bg: "from-green-500/15 via-gray-950 to-gray-950",
         badge: "border-green-500/30 bg-green-500/10 text-green-300",
         glow: "bg-green-500/10",
-      }
+      };
     }
 
     if (resultado === "Empate") {
@@ -21,7 +21,7 @@ function MatchCard({ partida, agentImages }) {
         bg: "from-yellow-500/15 via-gray-950 to-gray-950",
         badge: "border-yellow-500/30 bg-yellow-500/10 text-yellow-300",
         glow: "bg-yellow-500/10",
-      }
+      };
     }
 
     return {
@@ -31,11 +31,11 @@ function MatchCard({ partida, agentImages }) {
       bg: "from-red-500/15 via-gray-950 to-gray-950",
       badge: "border-red-500/30 bg-red-500/10 text-red-300",
       glow: "bg-red-500/10",
-    }
-  }
+    };
+  };
 
-  const resultadoStyle = getResultadoStyle(partida.resultado)
-  const agentImage = agentImages[partida.agente]
+  const resultadoStyle = getResultadoStyle(partida.resultado);
+  const agentImage = agentImages[partida.agente];
 
   return (
     <article className="group relative overflow-visible">
@@ -125,7 +125,7 @@ function MatchCard({ partida, agentImages }) {
         </div>
       </div>
     </article>
-  )
+  );
 }
 
 function MiniStat({ label, value, tooltip }) {
@@ -145,7 +145,7 @@ function MiniStat({ label, value, tooltip }) {
         )}
       </p>
     </div>
-  )
+  );
 }
 
-export default MatchCard
+export default MatchCard;

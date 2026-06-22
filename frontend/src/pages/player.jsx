@@ -1,158 +1,167 @@
-import { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
-import axios from 'axios'
-import StatCard from '../components/statcard'
-import MatchCard from '../components/matchcard'
-import PlayerHeader from '../components/playerheader'
+import { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
+import axios from "axios";
+import StatCard from "../components/statcard";
+import MatchCard from "../components/matchcard";
+import PlayerHeader from "../components/playerheader";
 
 function Player() {
-  const { nome, tag } = useParams()
+  const { nome, tag } = useParams();
 
-  const [playerData, setPlayerData] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [erro, setErro] = useState(null)
+  const [playerData, setPlayerData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [erro, setErro] = useState(null);
 
-  const [isFavorito, setIsFavorito] = useState(false)
-  const [favId, setFavId] = useState(null)
+  const [isFavorito, setIsFavorito] = useState(false);
+  const [favId, setFavId] = useState(null);
 
-  const [agentImages, setAgentImages] = useState({})
-  const [rankIcons, setRankIcons] = useState({})
+  const [agentImages, setAgentImages] = useState({});
+  const [rankIcons, setRankIcons] = useState({});
 
   useEffect(() => {
     async function buscar() {
       try {
-        setLoading(true)
-        setErro(null)
+        setLoading(true);
+        setErro(null);
 
-        const res = await axios.get(`http://localhost:3000/api/player/na/${nome}/${tag}`)
-        setPlayerData(res.data.data)
+        const res = await axios.get(
+          `http://localhost:3000/api/player/na/${nome}/${tag}`,
+        );
+        setPlayerData(res.data.data);
       } catch (err) {
-        console.error("Erro ao buscar jogador:", err)
+        console.error("Erro ao buscar jogador:", err);
 
         if (err.response?.status === 404) {
-          setErro("Jogador não encontrado")
+          setErro("Jogador não encontrado");
         } else if (err.response?.status === 502) {
-          setErro("Erro ao consultar a API do Valorant. Tente novamente mais tarde.")
+          setErro(
+            "Erro ao consultar a API do Valorant. Tente novamente mais tarde.",
+          );
         } else {
-          setErro("Erro ao carregar os dados do jogador.")
+          setErro("Erro ao carregar os dados do jogador.");
         }
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
     }
 
-    buscar()
-  }, [nome, tag])
+    buscar();
+  }, [nome, tag]);
 
   useEffect(() => {
     async function checarFavorito() {
-      const token = localStorage.getItem("token")
-      if (!token) return
+      const token = localStorage.getItem("token");
+      if (!token) return;
 
       try {
         const res = await axios.get("http://localhost:3000/api/favorites", {
-          headers: { Authorization: `Bearer ${token}` }
-        })
+          headers: { Authorization: `Bearer ${token}` },
+        });
 
-        const listaFavoritos = res.data.data || []
+        const listaFavoritos = res.data.data || [];
 
         const favoritoEncontrado = listaFavoritos.find(
           (fav) =>
             fav.riot_name.toLowerCase() === nome.toLowerCase() &&
-            fav.riot_tag.toLowerCase() === tag.toLowerCase()
-        )
+            fav.riot_tag.toLowerCase() === tag.toLowerCase(),
+        );
 
         if (favoritoEncontrado) {
-          setIsFavorito(true)
-          setFavId(favoritoEncontrado.id)
+          setIsFavorito(true);
+          setFavId(favoritoEncontrado.id);
         } else {
-          setIsFavorito(false)
-          setFavId(null)
+          setIsFavorito(false);
+          setFavId(null);
         }
       } catch (err) {
-        console.error("Erro ao checar favoritos", err)
+        console.error("Erro ao checar favoritos", err);
       }
     }
 
-    checarFavorito()
-  }, [nome, tag])
+    checarFavorito();
+  }, [nome, tag]);
 
   useEffect(() => {
     async function buscarAgentes() {
       try {
-        const res = await axios.get('https://valorant-api.com/v1/agents?isPlayableCharacter=true')
+        const res = await axios.get(
+          "https://valorant-api.com/v1/agents?isPlayableCharacter=true",
+        );
 
-        const mapa = {}
+        const mapa = {};
 
-        res.data.data.forEach(agente => {
-          mapa[agente.displayName] = agente.displayIcon
-        })
+        res.data.data.forEach((agente) => {
+          mapa[agente.displayName] = agente.displayIcon;
+        });
 
-        setAgentImages(mapa)
+        setAgentImages(mapa);
       } catch (err) {
-        console.error("Erro ao buscar imagens dos agentes", err)
+        console.error("Erro ao buscar imagens dos agentes", err);
       }
     }
 
-    buscarAgentes()
-  }, [])
+    buscarAgentes();
+  }, []);
 
   useEffect(() => {
     async function buscarRanks() {
       try {
-        const res = await axios.get('https://valorant-api.com/v1/competitivetiers')
+        const res = await axios.get(
+          "https://valorant-api.com/v1/competitivetiers",
+        );
 
-        const seasons = res.data.data || []
-        const ultimaSeason = seasons[seasons.length - 1]
+        const seasons = res.data.data || [];
+        const ultimaSeason = seasons[seasons.length - 1];
 
-        const mapa = {}
+        const mapa = {};
 
-        ultimaSeason?.tiers?.forEach(tier => {
+        ultimaSeason?.tiers?.forEach((tier) => {
           if (tier.tierName) {
-            mapa[tier.tierName.toLowerCase()] = tier.largeIcon || tier.smallIcon
+            mapa[tier.tierName.toLowerCase()] =
+              tier.largeIcon || tier.smallIcon;
           }
-        })
+        });
 
-        setRankIcons(mapa)
+        setRankIcons(mapa);
       } catch (err) {
-        console.error("Erro ao buscar ícones de rank", err)
+        console.error("Erro ao buscar ícones de rank", err);
       }
     }
 
-    buscarRanks()
-  }, [])
+    buscarRanks();
+  }, []);
 
   async function handleToggleFavorito() {
-    const token = localStorage.getItem("token")
+    const token = localStorage.getItem("token");
 
     if (!token) {
-      alert("Você precisa fazer login para favoritar jogadores!")
-      return
+      alert("Você precisa fazer login para favoritar jogadores!");
+      return;
     }
 
     try {
       if (isFavorito) {
         await axios.delete(`http://localhost:3000/api/favorites/${favId}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        })
+          headers: { Authorization: `Bearer ${token}` },
+        });
 
-        setIsFavorito(false)
-        setFavId(null)
+        setIsFavorito(false);
+        setFavId(null);
       } else {
         const res = await axios.post(
           "http://localhost:3000/api/favorites",
           { riot_name: nome, riot_tag: tag },
-          { headers: { Authorization: `Bearer ${token}` } }
-        )
+          { headers: { Authorization: `Bearer ${token}` } },
+        );
 
-        setIsFavorito(true)
+        setIsFavorito(true);
 
         if (res.data?.data?.id) {
-          setFavId(res.data.data.id)
+          setFavId(res.data.data.id);
         }
       }
     } catch (err) {
-      console.error("Erro ao favoritar", err)
+      console.error("Erro ao favoritar", err);
     }
   }
 
@@ -161,7 +170,7 @@ function Player() {
       <div className="min-h-screen bg-black flex items-center justify-center text-white">
         Carregando...
       </div>
-    )
+    );
   }
 
   if (erro) {
@@ -169,7 +178,7 @@ function Player() {
       <div className="min-h-screen bg-black flex items-center justify-center text-red-400">
         {erro}
       </div>
-    )
+    );
   }
 
   if (!playerData || !playerData.jogador) {
@@ -177,20 +186,17 @@ function Player() {
       <div className="min-h-screen bg-black flex items-center justify-center text-red-400">
         Dados do jogador não encontrados.
       </div>
-    )
+    );
   }
 
-  const jogador = playerData.jogador
-  const stats = playerData.stats
-  const partidas = playerData.partidas || []
+  const jogador = playerData.jogador;
+  const stats = playerData.stats;
+  const partidas = playerData.partidas || [];
 
-  const rankIcon = jogador.rank
-    ? rankIcons[jogador.rank.toLowerCase()]
-    : null
+  const rankIcon = jogador.rank ? rankIcons[jogador.rank.toLowerCase()] : null;
 
   return (
     <div className="relative min-h-screen bg-black text-white overflow-hidden">
-
       {/* Background pattern */}
       <div className="absolute inset-0 opacity-[0.04] pointer-events-none">
         <div
@@ -206,7 +212,6 @@ function Player() {
       <div className="absolute top-0 left-1/2 h-72 w-72 -translate-x-1/2 rounded-full bg-red-500/10 blur-3xl pointer-events-none" />
 
       <div className="relative z-10">
-
         <PlayerHeader
           jogador={jogador}
           rankIcon={rankIcon}
@@ -215,14 +220,14 @@ function Player() {
         />
 
         <main className="max-w-6xl mx-auto px-6 py-8 flex flex-col gap-8">
-
           {/* Stats section */}
           <section>
             <div className="mb-4 flex items-end justify-between gap-4">
               <div>
                 <h2 className="text-xl font-bold">Desempenho recente</h2>
                 <p className="text-sm text-gray-400">
-                  Estatísticas calculadas com base nas partidas competitivas recentes.
+                  Estatísticas calculadas com base nas partidas competitivas
+                  recentes.
                 </p>
               </div>
             </div>
@@ -327,11 +332,10 @@ function Player() {
               )}
             </div>
           </section>
-
         </main>
       </div>
     </div>
-  )
+  );
 }
 
-export default Player
+export default Player;

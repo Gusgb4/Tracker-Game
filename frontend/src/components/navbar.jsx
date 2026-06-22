@@ -1,15 +1,14 @@
-import { Link, useLocation } from "react-router-dom"
+import { Link, useLocation } from "react-router-dom";
 
 export function Navbar() {
-  const location = useLocation()
+  const location = useLocation();
 
   // Função para verificar se o link atual é a página ativa
-  const isActive = (path) => location.pathname === path
+  const isActive = (path) => location.pathname === path;
 
   return (
     <nav className="sticky top-0 z-50 border-b border-gray-800 bg-gray-950/95 backdrop-blur-sm text-white">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-        
         {/* LOGO */}
         <Link to="/" className="flex items-center  gap-2">
           <span className="text-2xl font-bold tracking-tight ">
@@ -37,8 +36,7 @@ export function Navbar() {
             Entrar
           </Link>
         </div>
-        
       </div>
     </nav>
-  )
+  );
 }

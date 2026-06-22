@@ -7,7 +7,7 @@ function Tooltip({ children, text }) {
         {text}
       </span>
     </span>
-  )
+  );
 }
 
-export default Tooltip
+export default Tooltip;

@@ -1,4 +1,4 @@
-import Tooltip from "./tooltip"
+import Tooltip from "./tooltip";
 
 function StatCard({ titulo, valor, cor = "text-white", subtitulo, tooltip }) {
   return (
@@ -23,14 +23,10 @@ function StatCard({ titulo, valor, cor = "text-white", subtitulo, tooltip }) {
           {valor ?? "—"}
         </p>
 
-        {subtitulo && (
-          <p className="mt-1 text-sm text-gray-400">
-            {subtitulo}
-          </p>
-        )}
+        {subtitulo && <p className="mt-1 text-sm text-gray-400">{subtitulo}</p>}
       </div>
     </div>
-  )
+  );
 }
 
-export default StatCard
+export default StatCard;
