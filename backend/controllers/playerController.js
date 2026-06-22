@@ -1,15 +1,61 @@
-const playerService = require('../services/playerService');
+const playerService = require("../services/playerService");
+const partidaRepository = require("../repositories/partidaRepository");
 
 async function getPlayer(req, res) {
   const { region, name, tag } = req.params;
-  const forceUpdate = req.query.force === 'true';
-  
+  const forceUpdate = req.query.force === "true";
+
   try {
-    const data = await playerService.getPlayerData(region, name, tag, forceUpdate);
+    const data = await playerService.getPlayerData(
+      region,
+      name,
+      tag,
+      forceUpdate,
+    );
     res.status(200).json({ success: true, data });
   } catch (err) {
-    console.error('Erro completo:', err);
-    res.status(err.status || 500).json({ success: false, message: err.message });
+    console.error("Erro completo:", err);
+    res
+      .status(err.status || 500)
+      .json({ success: false, message: err.message });
+  }
+}
+
+async function getMatchDetails(req, res) {
+  const { jogadorId, matchId } = req.params;
+
+  try {
+    const data = await partidaRepository.findDetailsByJogadorAndMatch(
+      jogadorId,
+      matchId,
+    );
+
+    if (!data) {
+      return res.status(404).json({
+        success: false,
+        message: "Partida não encontrada",
+      });
+    }
+
+    if (!data.detalhes) {
+      return res.status(404).json({
+        success: false,
+        message:
+          "Detalhes da partida não encontrados. Atualize o jogador para salvar os detalhes.",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data,
+    });
+  } catch (err) {
+    console.error("Erro no getMatchDetails:", err);
+
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
   }
 }
 
@@ -20,8 +66,10 @@ async function updatePlayer(req, res) {
     const data = await playerService.getPlayerData(region, name, tag, true);
     res.status(200).json({ success: true, data });
   } catch (err) {
-    console.error('Erro no updatePlayer:', err);
-    res.status(err.status || 500).json({ success: false, message: err.message });
+    console.error("Erro no updatePlayer:", err);
+    res
+      .status(err.status || 500)
+      .json({ success: false, message: err.message });
   }
 }
 
@@ -29,16 +77,25 @@ async function getRankHistory(req, res) {
   const { region, name, tag } = req.params;
 
   try {
-    const jogador = await require('../repositories/jogadorRepository').findByRiotId(name, tag);
+    const jogador =
+      await require("../repositories/jogadorRepository").findByRiotId(
+        name,
+        tag,
+      );
     if (!jogador) {
-      return res.status(404).json({ success: false, message: 'Jogador não encontrado' });
+      return res
+        .status(404)
+        .json({ success: false, message: "Jogador não encontrado" });
     }
-    const history = await require('../repositories/rankSnapshotRepository').findByJogadorId(jogador.id);
+    const history =
+      await require("../repositories/rankSnapshotRepository").findByJogadorId(
+        jogador.id,
+      );
     res.status(200).json({ success: true, data: history });
   } catch (err) {
-    console.error('Erro no getRankHistory:', err);
+    console.error("Erro no getRankHistory:", err);
     res.status(500).json({ success: false, message: err.message });
   }
 }
 
-module.exports = { getPlayer, updatePlayer, getRankHistory };
+module.exports = { getPlayer, updatePlayer, getRankHistory, getMatchDetails };

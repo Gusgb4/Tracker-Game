@@ -163,6 +163,35 @@ async function getPlayerData(region, name, tag, forceUpdate = false) {
           dano_por_round: (damage_made / rounds_played).toFixed(2),
           first_bloods: firstBloods,
           aces,
+          detalhes_json: JSON.stringify({
+            metadata: {
+              matchid: match.metadata?.matchid || null,
+              map: match.metadata?.map || null,
+              mode: match.metadata?.mode || null,
+              rounds_played: match.metadata?.rounds_played || null,
+              game_start: match.metadata?.game_start || null,
+            },
+            teams: match.teams || null,
+            players: (match.players?.all_players || []).map((player) => ({
+              puuid: player.puuid,
+              name: player.name,
+              tag: player.tag,
+              team: player.team,
+              character: player.character,
+              currenttier_patched: player.currenttier_patched,
+              damage_made: player.damage_made,
+              damage_received: player.damage_received,
+              stats: {
+                kills: player.stats?.kills || 0,
+                deaths: player.stats?.deaths || 0,
+                assists: player.stats?.assists || 0,
+                score: player.stats?.score || 0,
+                headshots: player.stats?.headshots || 0,
+                bodyshots: player.stats?.bodyshots || 0,
+                legshots: player.stats?.legshots || 0,
+              },
+            })),
+          }),
         });
         partidasSalvas++;
       }

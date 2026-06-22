@@ -53,7 +53,7 @@ CREATE TABLE `jogadores` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `unique_player` (`riot_name`,`riot_tag`),
   UNIQUE KEY `puuid` (`puuid`)
-) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=12 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -82,11 +82,12 @@ CREATE TABLE `partidas` (
   `dano_por_round` decimal(6,2) DEFAULT NULL,
   `first_bloods` int(11) DEFAULT 0,
   `aces` int(11) DEFAULT 0,
+  `detalhes_json` longtext DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `unique_jogador_match` (`jogador_id`,`match_id`),
   KEY `jogador_id` (`jogador_id`),
   CONSTRAINT `partidas_ibfk_1` FOREIGN KEY (`jogador_id`) REFERENCES `jogadores` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=411 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=599 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -105,7 +106,7 @@ CREATE TABLE `rank_snapshots` (
   PRIMARY KEY (`id`),
   KEY `jogador_id` (`jogador_id`),
   CONSTRAINT `rank_snapshots_ibfk_1` FOREIGN KEY (`jogador_id`) REFERENCES `jogadores` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=32 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=42 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -135,4 +136,4 @@ CREATE TABLE `usuarios` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-06-21 13:26:36
+-- Dump completed on 2026-06-22  0:29:21

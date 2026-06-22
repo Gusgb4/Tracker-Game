@@ -4,6 +4,7 @@ import axios from "axios";
 import StatCard from "../components/statcard";
 import MatchCard from "../components/matchcard";
 import PlayerHeader from "../components/playerheader";
+import DetalhesModal from "../components/detalhesModal";
 
 function Player() {
   const { nome, tag } = useParams();
@@ -17,6 +18,10 @@ function Player() {
 
   const [agentImages, setAgentImages] = useState({});
   const [rankIcons, setRankIcons] = useState({});
+
+  const [partidaSelecionada, setPartidaSelecionada] = useState(null);
+  const [detalhesPartida, setDetalhesPartida] = useState(null);
+  const [carregandoDetalhes, setCarregandoDetalhes] = useState(false);
 
   useEffect(() => {
     async function buscar() {
@@ -193,6 +198,31 @@ function Player() {
   const stats = playerData.stats;
   const partidas = playerData.partidas || [];
 
+  async function abrirDetalhesPartida(partida) {
+    setPartidaSelecionada(partida);
+    setDetalhesPartida(null);
+    setCarregandoDetalhes(true);
+
+    try {
+      const res = await axios.get(
+        `http://localhost:3000/api/player/match/${jogador.id}/${partida.match_id}`,
+      );
+
+      setDetalhesPartida(res.data.data);
+    } catch (err) {
+      console.error("Erro ao buscar detalhes da partida:", err);
+      setDetalhesPartida(null);
+    } finally {
+      setCarregandoDetalhes(false);
+    }
+  }
+
+  function fecharDetalhesPartida() {
+    setPartidaSelecionada(null);
+    setDetalhesPartida(null);
+    setCarregandoDetalhes(false);
+  }
+
   const rankIcon = jogador.rank ? rankIcons[jogador.rank.toLowerCase()] : null;
 
   return (
@@ -318,6 +348,7 @@ function Player() {
                     key={partida.match_id || index}
                     partida={partida}
                     agentImages={agentImages}
+                    onClick={() => abrirDetalhesPartida(partida)}
                   />
                 ))
               ) : (
@@ -333,6 +364,13 @@ function Player() {
             </div>
           </section>
         </main>
+
+        <DetalhesModal
+          partida={partidaSelecionada}
+          detalhes={detalhesPartida}
+          loading={carregandoDetalhes}
+          onClose={fecharDetalhesPartida}
+        />
       </div>
     </div>
   );

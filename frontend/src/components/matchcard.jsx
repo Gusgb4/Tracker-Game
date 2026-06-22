@@ -1,6 +1,6 @@
 import Tooltip from "./tooltip";
 
-function MatchCard({ partida, agentImages }) {
+function MatchCard({ partida, agentImages, onClick }) {
   const getResultadoStyle = (resultado) => {
     if (resultado === "Vitória") {
       return {
@@ -38,7 +38,10 @@ function MatchCard({ partida, agentImages }) {
   const agentImage = agentImages[partida.agente];
 
   return (
-    <article className="group relative overflow-visible">
+    <article
+      onClick={onClick}
+      className="group relative overflow-visible cursor-pointer"
+    >
       <div
         className={`relative overflow-visible rounded-2xl border ${resultadoStyle.border} bg-gradient-to-br ${resultadoStyle.bg} p-3 transition-all hover:-translate-y-0.5 hover:border-gray-600 hover:shadow-xl hover:shadow-black/30`}
       >
