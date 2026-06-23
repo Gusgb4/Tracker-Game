@@ -23,6 +23,31 @@ function Player() {
   const [detalhesPartida, setDetalhesPartida] = useState(null);
   const [carregandoDetalhes, setCarregandoDetalhes] = useState(false);
 
+  const [mapImages, setMapImages] = useState({});
+
+  useEffect(() => {
+    async function buscarMapas() {
+      try {
+        const res = await axios.get("https://valorant-api.com/v1/maps");
+
+        const mapa = {};
+
+        res.data.data.forEach((map) => {
+          if (map.displayName) {
+            mapa[map.displayName] =
+              map.splash || map.listViewIcon || map.displayIcon || null;
+          }
+        });
+
+        setMapImages(mapa);
+      } catch (err) {
+        console.error("Erro ao buscar imagens dos mapas:", err);
+      }
+    }
+
+    buscarMapas();
+  }, []);
+
   useEffect(() => {
     async function buscar() {
       try {
@@ -370,6 +395,9 @@ function Player() {
           detalhes={detalhesPartida}
           loading={carregandoDetalhes}
           onClose={fecharDetalhesPartida}
+          agentImages={agentImages}
+          rankIcons={rankIcons}
+          mapImages={mapImages}
         />
       </div>
     </div>

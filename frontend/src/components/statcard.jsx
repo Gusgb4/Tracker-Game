@@ -19,7 +19,7 @@ function StatCard({ titulo, valor, cor = "text-white", subtitulo, tooltip }) {
           )}
         </p>
 
-        <p className={`text-2xl font-black tracking-tight ${cor}`}>
+        <p className={`text-2xl font-bold tracking-tight ${cor}`}>
           {valor ?? "—"}
         </p>
 
