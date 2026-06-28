@@ -309,41 +309,63 @@ function calcularEstatisticas(partidas) {
   const deaths = partidas.reduce((acc, p) => acc + (p.deaths || 0), 0);
   const assists = partidas.reduce((acc, p) => acc + (p.assists || 0), 0);
   const acs = partidas.reduce((acc, p) => acc + parseFloat(p.acs || 0), 0);
-  const ddelta = partidas.reduce(
-    (acc, p) => acc + parseFloat(p.ddelta_por_round || 0),
-    0,
-  );
-  const hs = partidas.reduce(
-    (acc, p) => acc + parseFloat(p.headshot_percent || 0),
-    0,
-  );
-  const firstBloods = partidas.reduce(
-    (acc, p) => acc + (p.first_bloods || 0),
-    0,
-  );
+  const ddelta = partidas.reduce((acc, p) => acc + parseFloat(p.ddelta_por_round || 0), 0);
+  const hs = partidas.reduce((acc, p) => acc + parseFloat(p.headshot_percent || 0), 0);
+  const firstBloods = partidas.reduce((acc, p) => acc + (p.first_bloods || 0), 0);
   const aces = partidas.reduce((acc, p) => acc + (p.aces || 0), 0);
 
-  const kda_geral =
-    deaths > 0
-      ? ((kills + assists) / deaths).toFixed(2)
-      : (kills + assists).toFixed(2);
+  const kda_geral = deaths > 0 ? ((kills + assists) / deaths).toFixed(2) : (kills + assists).toFixed(2);
+  const kdr_geral_num = deaths > 0 ? kills / deaths : kills;
+
+  // --- ALGORITMO DO PERFORMANCE SCORE (0 a 100)
+  const winrate_num = vitorias / total; // ex: 0.6 para 60%
+  const acs_medio_num = acs / total;
+  const ddelta_medio_num = ddelta / total;
+
+  // matemática de cada componente
+  const score_winrate = Math.min(winrate_num * 100, 100);
+  const score_kdr = Math.min(kdr_geral_num * 50, 100); // 2.0 KDR = 100 pontos
+  const score_acs = Math.min((acs_medio_num / 250) * 100, 100); // 250 ACS = 100 pontos
+  const score_ddelta = Math.min(((ddelta_medio_num + 50) / 100) * 100, 100); // +50 Dano Delta = 100 pontos (evita negativos)
+
+  // Cálculo ponderado com pesos iguais
+  let performance_score = (
+    score_winrate * 0.25 +
+    score_kdr * 0.25 +
+    score_acs * 0.25 +
+    score_ddelta * 0.25
+  );
+
+  // Garante travas de limite entre 0 e 100
+  performance_score = Math.max(0, Math.min(100, performance_score));
+
+  //  Atribuir uma letra com base na pontuação
+  let performance_rank = "C";
+  if (performance_score >= 90) performance_rank = "S+";
+  else if (performance_score >= 80) performance_rank = "S";
+  else if (performance_score >= 65) performance_rank = "A";
+  else if (performance_score >= 50) performance_rank = "B";
 
   return {
     total_partidas: total,
     vitorias,
     empates,
     derrotas: total - vitorias - empates,
-    winrate: ((vitorias / total) * 100).toFixed(1) + "%",
-    kdr_geral: deaths > 0 ? (kills / deaths).toFixed(2) : kills,
+    winrate: (winrate_num * 100).toFixed(1) + "%",
+    kdr_geral: kdr_geral_num.toFixed(2),
     kda_geral,
     kills_totais: kills,
     deaths_totais: deaths,
     assists_totais: assists,
-    acs_medio: (acs / total).toFixed(2),
-    ddelta_por_round_medio: (ddelta / total).toFixed(2),
+    acs_medio: acs_medio_num.toFixed(2),
+    ddelta_por_round_medio: ddelta_medio_num.toFixed(2),
     headshot_percent_medio: (hs / total).toFixed(2) + "%",
     first_bloods_totais: firstBloods,
     aces_totais: aces,
+    performance: {
+      score: Math.round(performance_score),
+      rank: performance_rank
+    }
   };
 }
 
