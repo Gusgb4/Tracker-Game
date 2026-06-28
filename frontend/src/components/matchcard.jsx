@@ -1,6 +1,12 @@
 import Tooltip from "./tooltip";
 
-function MatchCard({ partida, agentImages, onClick }) {
+function MatchCard({
+  partida,
+  agentImages,
+  rankIcons = {},
+  rankPartida,
+  onClick,
+}) {
   const getResultadoStyle = (resultado) => {
     if (resultado === "Vitória") {
       return {
@@ -78,6 +84,17 @@ function MatchCard({ partida, agentImages, onClick }) {
   const agentImage = agentImages[partida.agente];
   const dataPartida = formatarDataPartida(partida.data_partida);
 
+  const rankDaPartida =
+    rankPartida ??
+    partida.rank_partida ??
+    partida.currenttier_patched ??
+    partida.currenttierpatched ??
+    partida.rank ??
+    null;
+
+  const rankKey = rankDaPartida?.toLowerCase().trim();
+  const rankIcon = rankKey ? rankIcons[rankKey] : null;
+
   const kills = Number(partida.kills || 0);
   const deaths = Number(partida.deaths || 0);
   const assists = Number(partida.assists || 0);
@@ -149,9 +166,20 @@ function MatchCard({ partida, agentImages, onClick }) {
                 </span>
               </div>
 
-              <h3 className="truncate text-xl font-semibold tracking-tight text-white">
-                {partida.mapa || "Mapa desconhecido"}
-              </h3>
+              <div className="flex min-w-0 items-center gap-2">
+                <h3 className="truncate text-xl font-semibold tracking-tight text-white">
+                  {partida.mapa || "Mapa desconhecido"}
+                </h3>
+
+                {rankIcon && (
+                  <img
+                    src={rankIcon}
+                    alt={rankDaPartida}
+                    title={rankDaPartida}
+                    className="h-6 w-6 flex-shrink-0 object-contain"
+                  />
+                )}
+              </div>
 
               <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-gray-500">
                 <span className="truncate">{partida.agente || "Agente"}</span>
@@ -230,7 +258,7 @@ function MiniStat({ label, value, tooltip, valueClassName = "text-white" }) {
 function formatarDataPartida(data) {
   if (!data) return null;
 
-  return new Date(data).toLocaleString("pt-BR", {
+  return new Date(data).toLocaleDateString("pt-BR", {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",

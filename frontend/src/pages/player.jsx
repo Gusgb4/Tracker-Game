@@ -5,6 +5,7 @@ import StatCard from "../components/statcard";
 import MatchCard from "../components/matchcard";
 import PlayerHeader from "../components/playerheader";
 import DetalhesModal from "../components/detalhesModal";
+import PerformanceChart from "../components/performancechart";
 
 function Player() {
   const { nome, tag } = useParams();
@@ -24,6 +25,7 @@ function Player() {
   const [carregandoDetalhes, setCarregandoDetalhes] = useState(false);
 
   const [mapImages, setMapImages] = useState({});
+  const [ranksPartidas, setRanksPartidas] = useState({});
 
   useEffect(() => {
     if (playerData?.jogador) {
@@ -66,10 +68,12 @@ function Player() {
         setLoading(true);
         setErro(null);
         setPlayerData(null);
+        setRanksPartidas({});
 
         const res = await axios.get(
           `http://localhost:3000/api/player/na/${nome}/${tag}`,
         );
+
         setPlayerData(res.data.data);
       } catch (err) {
         console.error("Erro ao buscar jogador:", err);
@@ -173,6 +177,73 @@ function Player() {
 
     buscarRanks();
   }, []);
+
+  useEffect(() => {
+    let cancelado = false;
+
+    async function buscarRanksDasPartidas() {
+      const jogadorAtual = playerData?.jogador;
+      const partidasAtuais = playerData?.partidas || [];
+
+      if (
+        !jogadorAtual?.id ||
+        !jogadorAtual?.puuid ||
+        partidasAtuais.length === 0
+      ) {
+        setRanksPartidas({});
+        return;
+      }
+
+      try {
+        const resultados = await Promise.all(
+          partidasAtuais.map(async (partida) => {
+            try {
+              const res = await axios.get(
+                `http://localhost:3000/api/player/match/${jogadorAtual.id}/${partida.match_id}`,
+              );
+
+              const detalhes = res.data?.data?.detalhes;
+              const players = detalhes?.players || [];
+
+              const jogadorNaPartida = players.find(
+                (player) => player.puuid === jogadorAtual.puuid,
+              );
+
+              return [
+                partida.match_id,
+                jogadorNaPartida?.currenttier_patched || null,
+              ];
+            } catch (err) {
+              console.error("Erro ao buscar rank da partida:", err);
+              return [partida.match_id, null];
+            }
+          }),
+        );
+
+        if (cancelado) return;
+
+        const mapaRanks = {};
+
+        resultados.forEach(([matchId, rank]) => {
+          if (matchId && rank) {
+            mapaRanks[matchId] = rank;
+          }
+        });
+
+        setRanksPartidas(mapaRanks);
+      } catch (err) {
+        if (!cancelado) {
+          console.error("Erro ao buscar ranks das partidas:", err);
+        }
+      }
+    }
+
+    buscarRanksDasPartidas();
+
+    return () => {
+      cancelado = true;
+    };
+  }, [playerData]);
 
   async function handleToggleFavorito() {
     const token = localStorage.getItem("token");
@@ -316,9 +387,9 @@ function Player() {
               />
 
               <StatCard
-                titulo="KDA RATIO"
+                titulo="KDA Ratio"
                 valor={`${stats.kda_geral}`}
-                tooltip="Média de Abates, Mortes e Assistências nas partidas analisadas."
+                tooltip="Abates mais Assistências dividido por Mortes nas partidas analisadas."
               />
 
               <StatCard
@@ -368,6 +439,8 @@ function Player() {
             </div>
           </section>
 
+          <PerformanceChart partidas={partidas} />
+
           {/* Match history */}
           <section>
             <div className="mb-4 flex items-end justify-between gap-4">
@@ -390,6 +463,8 @@ function Player() {
                     key={partida.match_id || index}
                     partida={partida}
                     agentImages={agentImages}
+                    rankIcons={rankIcons}
+                    rankPartida={ranksPartidas[partida.match_id]}
                     onClick={() => abrirDetalhesPartida(partida)}
                   />
                 ))
