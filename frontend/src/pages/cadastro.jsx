@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 export default function Cadastrar() {
   const [nome, setNome] = useState("");
@@ -7,6 +7,8 @@ export default function Cadastrar() {
   const [senha, setSenha] = useState("");
   const [confirmarSenha, setConfirmarSenha] = useState("");
   const [msg, setMsg] = useState("");
+
+  const navigate = useNavigate();
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -37,10 +39,13 @@ export default function Cadastrar() {
       }
 
       setMsg("Cadastro realizado com sucesso!");
+
       setNome("");
       setEmail("");
       setSenha("");
       setConfirmarSenha("");
+
+      navigate("/login");
     } catch (err) {
       setMsg("Erro ao conectar com o servidor");
     }
