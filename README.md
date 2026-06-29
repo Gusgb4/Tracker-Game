@@ -6,6 +6,11 @@ O objetivo é permitir que jogadores analisem sua performance individual e colet
 
 ---
 
+# Deploy
+
+https://trackergame.vercel.app/home
+Utilizado Vercel para subir o Frontend, e Railway para o Backend + Banco de Dados.
+
 # Stack Atual (MVP)
 
 | Camada       | Tecnologia                          | Justificativas                   |
@@ -90,7 +95,7 @@ RNF07 – O backend deve seguir arquitetura em camadas no padrão MVC.
 
 RNF08 – O sistema deve utilizar ORM para abstração do acesso ao banco de dados na versão completa do projeto.
 
-RNF9 – A API deve seguir o padrão REST utilizando comunicação via JSON.
+RNF09 – A API deve seguir o padrão REST utilizando comunicação via JSON.
 
 RNF10 – O código-fonte deve ser versionado utilizando Git.
 
