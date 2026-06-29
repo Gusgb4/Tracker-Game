@@ -7,9 +7,6 @@ function PlayerHeader({ jogador, rankIcon, isFavorito, handleToggleFavorito }) {
     jogador.card?.wide ||
     null;
 
-  console.log("CARD NO HEADER:", jogador.card);
-  console.log("AVATAR URL:", avatarUrl);
-
   return (
     <header className="">
       <div className="max-w-6xl mx-auto px-6 py-8">
