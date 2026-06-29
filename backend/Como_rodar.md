@@ -59,7 +59,7 @@ Depois volta no XAMPP e clica em **Stop** no MySQL.
 
 ### Jogador
 
-| Método | Rota | Auth | Descrição |
+| ---Método ---|--- Rota ---|--- Auth ---|--- Descrição ---|
 | GET | `/api/player/:region/:name/:tag` | Publico | Busca dados do jogador |
 | POST | `/api/player/update/:region/:name/:tag` | Publico | Força atualização dos dados |
 | GET | `/api/player/rank-history/:region/:name/:tag` | Publico | Histórico de rank |
