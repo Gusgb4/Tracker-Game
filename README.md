@@ -9,7 +9,7 @@ O objetivo é permitir que jogadores analisem sua performance individual e colet
 # Deploy
 
 https://trackergame.vercel.app/home
-Utilizado Vercel para subir o Frontend, e Railway para o Backend + Banco de Dados.
+<br>Utilizado Vercel para subir o Frontend, e Railway para o Backend + Banco de Dados.
 
 # Stack Atual (MVP)
 
