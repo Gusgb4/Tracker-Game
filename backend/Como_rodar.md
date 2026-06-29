@@ -6,7 +6,7 @@ Dentro do MySQL, crie o banco:
 
 ```sql
 CREATE DATABASE valorant_tracker;
-USE valorant_tracker;
+
 ```
 Importa o schema: 
 ```bash
@@ -36,7 +36,7 @@ Sem o MySQL rodando o servidor vai retornar erro de conexão.
 
 Abre o terminal no VSCode dentro da pasta `backend` e roda:
 `node app.js`
-Se aparecer erro de módulo não encontrado, rode primeiro:
+Se for a sua primeira vez rodando o projeto na máquina ou se houver erro de módulo não encontrado, instale os pacotes localmente rodando:
 `npm install`
 
 ### Para encerrar o servidor:
@@ -65,7 +65,8 @@ Depois volta no XAMPP e clica em **Stop** no MySQL.
 |---|---|---|---|
 | GET | `/api/player/:region/:name/:tag` | Publico | Busca dados do jogador |
 | POST | `/api/player/update/:region/:name/:tag` | Publico | Força atualização dos dados |
-| GET | `/api/player/rank-history/:region/:name/:tag` | Publico | Histórico de rank |
+| GET | `/api/player/rank-history/:region/:name/:tag` | Publico | Retorna o Scoreboard com dados dos 10 jogadores de uma partida específica |
+|GET | `/api/player//match/:jogadorId/:matchId` | Público | Retorna o histórico de evolução de elo do jogador |
 
 ### Favoritos
 | Método | Rota | Auth | Descrição |
@@ -75,8 +76,8 @@ Depois volta no XAMPP e clica em **Stop** no MySQL.
 | DELETE | `/api/favorites/:id` | Privado | Remover favorito |
 
 ### Regiões disponíveis
-`br` `na` `eu` `ap` `latam` `kr
+`br` | `na` | `eu` | `ap` | `latam` | `kr`|
 
-### Testes backend
-Para testes rapidos de funcionamento:
-Utilizar a extensão Thunder Client
+### Testes de endpoints
+Para validar o funcionamento das rotas e sem interface gráfica:
+recomenda-se a utilização da extensão Thunder Client diretamente no ambiente do VSCode.
