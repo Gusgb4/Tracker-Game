@@ -1,0 +1,6 @@
+projectKey=valorant-tracker
+serverUrl=http://localhost:9000
+serverVersion=26.6.0.123539
+dashboardUrl=http://localhost:9000/dashboard?id=valorant-tracker
+ceTaskId=8aa7fd44-b44d-4ba0-94e0-487fbb68b2e7
+ceTaskUrl=http://localhost:9000/api/ce/task?id=8aa7fd44-b44d-4ba0-94e0-487fbb68b2e7
